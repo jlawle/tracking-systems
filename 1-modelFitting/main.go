@@ -6,6 +6,7 @@ import (
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/draw"
 	"image/color"
 	"log"
 )
@@ -14,14 +15,14 @@ var A *mat.Dense
 var b *mat.Dense
 
 func main() {
-	A = mat.NewDense(5, 2, []float64{
+	A = mat.NewDense(6, 2, []float64{
 		5, 1,
 		6, 1,
 		7, 1,
 		8, 1,
-		9, 1})
-
-	b = mat.NewDense(5, 1, []float64{1, 1, 2, 3, 5})
+		9, 1,
+		8, 1})
+	b = mat.NewDense(6, 1, []float64{1, 1, 2, 3, 5, 14})
 
 	printMat("A", A)
 	printMat("b", b)
@@ -35,7 +36,7 @@ func plotData(m *mat.Dense) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 
-	p.Title.Text = "Plot 1"
+	p.Title.Text = "Plot 2"
 	p.X.Label.Text = "X"
 	p.Y.Label.Text = "Y"
 	p.X.Min = 4
@@ -50,6 +51,8 @@ func plotData(m *mat.Dense) {
 	if err != nil {
 		log.Fatalf("error generating scatter plot")
 	}
+	s.GlyphStyle.Color = color.RGBA{R: 255, B: 128, A: 255}
+	s.Shape = draw.CrossGlyph{}
 
 	// Add in 2D fitted line
 	lsrl := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0)*x + m.At(1, 0) })
@@ -57,7 +60,8 @@ func plotData(m *mat.Dense) {
 
 	p.Add(s, lsrl)
 	p.Legend.Add("scatter", s)
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "points.png"); err != nil {
+	p.Legend.Add("lsrl", lsrl)
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "plot2.png"); err != nil {
 		log.Fatalf("error saving plot")
 	}
 }
