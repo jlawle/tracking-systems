@@ -2,33 +2,57 @@ package main
 
 import "fmt"
 import "gonum.org/v1/gonum/mat"
+import "log"
+
+var A *mat.Dense
+var b *mat.Dense
 
 func main() {
-	bvals := []float64{1, 1, 2, 3, 5}
-	a := []float64{5, 1, 6, 1, 7, 1, 8, 1, 9, 1}
-	A := mat.NewDense(5, 2, a)
-	b := mat.NewDense(5, 1, bvals)
-
-	af := mat.Formatted(A, mat.Prefix(" "))
-	bf := mat.Formatted(b, mat.Prefix(" "))
-
-	fmt.Printf("Matrix A: \n %v \n", af)
-	fmt.Printf("Matrix b: \n %v \n", bf)
+	A = mat.NewDense(5, 2, []float64{
+		5, 1, 
+		6, 1, 
+		7, 1, 
+		8, 1, 
+		9, 1})
+	
+	b = mat.NewDense(5, 1, []float64{1, 1, 2, 3, 5})
+	
+	
+	printMat("A", A)
+	printMat("b", b)
 
 	// FIND X
+	calculateVars()
+}
 
+// Calculate a given solution from matrices
+func calculateVars() {
 	var x mat.Dense
-	var c mat.Dense
 	x.Mul(A.T(), A)
 
 	var inv mat.Dense
-	err := inv.Inverse(x)
+	err := inv.Inverse(&x)
 	if err != nil {
 		log.Fatalf("Error creating inverse: %v", err)
 	}
 
-	c.Mul(inv, A.T())
+	printMat("inv", &inv)
 
-	cf := mat.Formatted(c, mat.Prefix(" "))
-	fmt.Printf("Matrix c: \n %v \n", cf)
+
+	var mult mat.Dense
+	mult.Mul(&inv, A.T())
+
+	printMat("mult", &mult)
+
+	
+	var bm mat.Dense
+	bm.Mul(&mult, b)
+
+	printMat("mult", &bm)
+}
+
+// Function for easy matrix format prints
+func printMat(name string, m mat.Matrix) {
+	mf := mat.Formatted(m, mat.FormatMATLAB())
+	fmt.Printf("Matrix %s: \n %#v \n", name, mf)
 }
