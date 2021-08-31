@@ -28,8 +28,8 @@ func main() {
 		log.Fatalf("Error getting file data: %v", err)
 	}
 
-	Bts = mat.NewDense(len(bites)/2, 2, bites)
-	A = mat.NewDense(len(bites)/2, 2, bitesHalved)
+	Bts = mat.NewDense(len(bites), 1, bites)
+	A = mat.NewDense(len(bitesHalved)/2, 2, bitesHalved)
 	b = mat.NewDense(len(cals), 1, cals)
 
 	// A = mat.NewDense(6, 2, []float64{
@@ -71,8 +71,9 @@ func getFileData() ([]float64, []float64, []float64, error) {
 		// Capture a given bite
 		bf, _ := strconv.ParseFloat(nums[2], 64)
 		bites = append(bites, bf)
-		bites = append(bites, 1)
-		bh = append(bh, 1/bf)
+		//bites = append(bites, 1)
+		p := math.Pow(math.E, -bf)
+		bh = append(bh, p)
 		bh = append(bh, 1)
 
 		// Capture a given kcal for bite
@@ -91,13 +92,13 @@ func plotData(m *mat.Dense) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 
-	p.Title.Text = "Plot 2"
-	p.X.Label.Text = "X"
-	p.Y.Label.Text = "Y"
-	p.X.Min = 4
-	p.X.Max = 12
-	p.Y.Min = 4
-	p.Y.Max = 12
+	p.Title.Text = "Plot 3"
+	p.X.Label.Text = "Bites"
+	p.Y.Label.Text = "Kcals/bite"
+	//p.X.Min = 4
+	//p.X.Max = 12
+	//p.Y.Min = 4
+	//p.Y.Max = 12
 
 	pts := makePoints()
 
@@ -110,13 +111,25 @@ func plotData(m *mat.Dense) {
 	s.Shape = draw.CrossGlyph{}
 
 	// Add in 2D fitted line
-	lsrl := plotter.NewFunction(func(x float64) float64 { return m.At(1, 0)*math.Pow(-1, x) + m.At(0, 0) })
-	lsrl.Color = color.RGBA{B: 255, A: 255}
+	//linear := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0)*x + m.At(1, 0) })
+	//linear.Color = color.RGBA{B: 255, A: 255}
 
-	p.Add(s, lsrl)
-	p.Legend.Add("scatter", s)
-	p.Legend.Add("lsrl", lsrl)
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "plot3.png"); err != nil {
+	// formatting for 1 / sqrt(x)
+	//fcn := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0)*(1/math.Sqrt(x)) + m.At(1, 0) })
+	//fcn.Color = color.RGBA{B: 255, A: 255}
+
+	// formatting for 1 / x
+	//fcn2 := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0)*(1/x) + m.At(1, 0) })
+	//fcn2.Color = color.RGBA{B: 255, A: 255}
+
+	// formatting for e^ax
+	fcn3 := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0) * math.Pow(math.E, -m.At(1, 0)*x) })
+	fcn3.Color = color.RGBA{B: 255, A: 255}
+
+	p.Add(s, fcn3)
+	//p.Legend.Add("scatter", s)
+	//p.Legend.Add("lsrl", lsrl)
+	if err := p.Save(6*vg.Inch, 6*vg.Inch, "plot3.png"); err != nil {
 		log.Fatalf("error saving plot")
 	}
 }
@@ -139,7 +152,7 @@ func makePoints() plotter.XYs {
 	return pts
 }
 
-// Calculate a given solution from matrices
+// Calculate a given solution (x) with matrices A, b
 func calculateVars() *mat.Dense {
 	var x mat.Dense
 	x.Mul(A.T(), A)
