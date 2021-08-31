@@ -1,31 +1,45 @@
 package main
 
 import (
-	"os"
 	"bufio"
 	"fmt"
+	"image/color"
+	"log"
+	"math"
+	"os"
 	"strconv"
+	"strings"
+
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
 	"gonum.org/v1/plot/vg/draw"
-	"image/color"
-	"log"
 )
 
 var A *mat.Dense
+var Bts *mat.Dense
 var b *mat.Dense
 
 func main() {
-	A = mat.NewDense(6, 2, []float64{
-		5, 1,
-		6, 1,
-		7, 1,
-		8, 1,
-		9, 1,
-		8, 1})
-	b = mat.NewDense(6, 1, []float64{1, 1, 2, 3, 5, 14})
+	// Get file data
+	bites, bitesHalved, cals, err := getFileData()
+	if err != nil {
+		log.Fatalf("Error getting file data: %v", err)
+	}
+
+	Bts = mat.NewDense(len(bites)/2, 2, bites)
+	A = mat.NewDense(len(bites)/2, 2, bitesHalved)
+	b = mat.NewDense(len(cals), 1, cals)
+
+	// A = mat.NewDense(6, 2, []float64{
+	// 	5, 1,
+	// 	6, 1,
+	// 	7, 1,
+	// 	8, 1,
+	// 	9, 1,
+	// 	8, 1})
+	// b = mat.NewDense(6, 1, []float64{1, 1, 2, 3, 5, 14})
 
 	printMat("A", A)
 	printMat("b", b)
@@ -33,26 +47,44 @@ func main() {
 	// FIND X
 	mat := calculateVars()
 	plotData(mat)
+
 }
 
+func getFileData() ([]float64, []float64, []float64, error) {
+	bites := make([]float64, 0)
+	cals := make([]float64, 0)
+	bh := make([]float64, 0)
+	count := 0
 
-func getFileData() error {
 	file, err := os.Open("data.txt")
 	if err != nil {
-		return fmt.Errorf("error opening file: %v", err)
+		return nil, nil, nil, fmt.Errorf("error opening file: %v", err)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+
+	// Loop line by line through file to form our float arrays
 	for scanner.Scan() {
 		nums := strings.Split(scanner.Text(), " ")
-		
 
+		// Capture a given bite
+		bf, _ := strconv.ParseFloat(nums[2], 64)
+		bites = append(bites, bf)
+		bites = append(bites, 1)
+		bh = append(bh, 1/bf)
+		bh = append(bh, 1)
 
+		// Capture a given kcal for bite
+		cal, _ := strconv.ParseFloat(nums[3], 64)
+		cals = append(cals, cal/bf)
+
+		count++
+		//os.Exit(0)
 	}
 
-
-
+	fmt.Printf("bites: %d, cals/bite: %d \n", len(bites), len(cals))
+	return bites, bh, cals, nil
 }
 
 func plotData(m *mat.Dense) {
@@ -78,19 +110,19 @@ func plotData(m *mat.Dense) {
 	s.Shape = draw.CrossGlyph{}
 
 	// Add in 2D fitted line
-	lsrl := plotter.NewFunction(func(x float64) float64 { return m.At(0, 0)*x + m.At(1, 0) })
+	lsrl := plotter.NewFunction(func(x float64) float64 { return m.At(1, 0)*math.Pow(-1, x) + m.At(0, 0) })
 	lsrl.Color = color.RGBA{B: 255, A: 255}
 
 	p.Add(s, lsrl)
 	p.Legend.Add("scatter", s)
 	p.Legend.Add("lsrl", lsrl)
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "plot2.png"); err != nil {
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "plot3.png"); err != nil {
 		log.Fatalf("error saving plot")
 	}
 }
 
 func makePoints() plotter.XYs {
-	xvec := A.ColView(0)
+	xvec := Bts.ColView(0)
 	yvec := b.ColView(0)
 	fmt.Printf("xvec len: %d \n", xvec.Len())
 	if xvec.Len() != yvec.Len() {
