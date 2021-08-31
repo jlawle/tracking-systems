@@ -1,7 +1,10 @@
 package main
 
 import (
+	"os"
+	"bufio"
 	"fmt"
+	"strconv"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
@@ -30,6 +33,26 @@ func main() {
 	// FIND X
 	mat := calculateVars()
 	plotData(mat)
+}
+
+
+func getFileData() error {
+	file, err := os.Open("data.txt")
+	if err != nil {
+		return fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		nums := strings.Split(scanner.Text(), " ")
+		
+
+
+	}
+
+
+
 }
 
 func plotData(m *mat.Dense) {
